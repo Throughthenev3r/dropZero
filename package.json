@@ -7,7 +7,7 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
-    "test": "echo \"Tests OK\" && exit 0"
+    "test": "npx playwright test e2e/shortener.spec.js --project=chromium"
   },
   "keywords": [
     "url-shortener",
@@ -20,6 +20,8 @@
     "express": "^5.1.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.60.0",
+    "@types/node": "^25.9.3",
     "nodemon": "^3.1.14"
   }
 }
