@@ -15,3 +15,18 @@ test("shorten url and redirect to original", async ({ page, request }) => {
 
   await expect(page).toHaveURL(/google\.com/);
 });
+
+test("stats returns clicks after redirect", async ({ page, request }) => {
+  const create = await request.post("/api/shorten", {
+    data: { url: "https://google.com" },
+  });
+  expect(create.status()).toBe(201);
+  const { code, shortUrl } = await create.json();
+  await page.goto(shortUrl);
+  await expect(page).toHaveURL(/google\.com/);
+  const stats = await request.get(`/api/stats/${code}`);
+  expect(stats.status()).toBe(200);
+  const data = await stats.json();
+  expect(data.clicks).toBeGreaterThanOrEqual(1);
+  expect(data.uniqueVisitors).toBeGreaterThanOrEqual(1);
+});
