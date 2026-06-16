@@ -49,3 +49,9 @@ export function getStats(code) {
     clicksByDay: byDay,
   };
 }
+
+export function deleteLink(code) {
+  db.prepare("DELETE FROM click_events WHERE code = ?").run(code);
+  const result = db.prepare("DELETE FROM links WHERE code = ?").run(code);
+  return result.changes > 0;
+}
