@@ -36,16 +36,35 @@ jobs:
         run: npm ci
 
       - name: Wait for DynamoDB Local
+        env:
+          DYNAMODB_ENDPOINT: http://localhost:8000
+          AWS_REGION: us-east-1
+          AWS_ACCESS_KEY_ID: local
+          AWS_SECRET_ACCESS_KEY: local
         run: |
-          for i in $(seq 1 30); do
-            if curl -fsS http://localhost:8000 >/dev/null 2>&1; then
-              echo "DynamoDB Local is ready"
-              exit 0
-            fi
-            sleep 1
-          done
-          echo "DynamoDB Local did not become ready in time"
-          exit 1
+          node --input-type=module -e "
+          import { DynamoDBClient, ListTablesCommand } from '@aws-sdk/client-dynamodb';
+          const client = new DynamoDBClient({
+            endpoint: process.env.DYNAMODB_ENDPOINT,
+            region: process.env.AWS_REGION,
+            credentials: {
+              accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+              secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+            },
+          });
+          for (let attempt = 1; attempt <= 30; attempt += 1) {
+            try {
+              await client.send(new ListTablesCommand({}));
+              console.log('DynamoDB Local is ready');
+              process.exit(0);
+            } catch (error) {
+              console.log(\`Waiting for DynamoDB Local (attempt \${attempt}/30)\`);
+              await new Promise((resolve) => setTimeout(resolve, 1000));
+            }
+          }
+          console.error('DynamoDB Local did not become ready in time');
+          process.exit(1);
+          "
 
       - name: Lint
         run: npm run lint

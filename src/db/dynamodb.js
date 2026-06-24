@@ -26,6 +26,27 @@ export const docClient = DynamoDBDocumentClient.from(client, {
   marshallOptions: { removeUndefinedValues: true },
 });
 
+async function withDynamoRetries(operation) {
+  for (let attempt = 0; attempt < 30; attempt += 1) {
+    try {
+      return await operation();
+    } catch (error) {
+      const retryable =
+        error.code === "ECONNREFUSED" ||
+        error.name === "TimeoutError" ||
+        error.$metadata?.httpStatusCode === 503;
+
+      if (!retryable || attempt === 29) {
+        throw error;
+      }
+
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+    }
+  }
+
+  throw new Error("DynamoDB operation failed after retries");
+}
+
 async function tableExists(tableName) {
   try {
     await client.send(new DescribeTableCommand({ TableName: tableName }));
@@ -49,33 +70,35 @@ async function waitForTable(tableName) {
 }
 
 export async function ensureTables() {
-  if (!(await tableExists(LINKS_TABLE))) {
-    await client.send(
-      new CreateTableCommand({
-        TableName: LINKS_TABLE,
-        AttributeDefinitions: [{ AttributeName: "code", AttributeType: "S" }],
-        KeySchema: [{ AttributeName: "code", KeyType: "HASH" }],
-        BillingMode: "PAY_PER_REQUEST",
-      })
-    );
-    await waitForTable(LINKS_TABLE);
-  }
+  await withDynamoRetries(async () => {
+    if (!(await tableExists(LINKS_TABLE))) {
+      await client.send(
+        new CreateTableCommand({
+          TableName: LINKS_TABLE,
+          AttributeDefinitions: [{ AttributeName: "code", AttributeType: "S" }],
+          KeySchema: [{ AttributeName: "code", KeyType: "HASH" }],
+          BillingMode: "PAY_PER_REQUEST",
+        })
+      );
+      await waitForTable(LINKS_TABLE);
+    }
 
-  if (!(await tableExists(CLICK_EVENTS_TABLE))) {
-    await client.send(
-      new CreateTableCommand({
-        TableName: CLICK_EVENTS_TABLE,
-        AttributeDefinitions: [
-          { AttributeName: "code", AttributeType: "S" },
-          { AttributeName: "clicked_at", AttributeType: "S" },
-        ],
-        KeySchema: [
-          { AttributeName: "code", KeyType: "HASH" },
-          { AttributeName: "clicked_at", KeyType: "RANGE" },
-        ],
-        BillingMode: "PAY_PER_REQUEST",
-      })
-    );
-    await waitForTable(CLICK_EVENTS_TABLE);
-  }
+    if (!(await tableExists(CLICK_EVENTS_TABLE))) {
+      await client.send(
+        new CreateTableCommand({
+          TableName: CLICK_EVENTS_TABLE,
+          AttributeDefinitions: [
+            { AttributeName: "code", AttributeType: "S" },
+            { AttributeName: "clicked_at", AttributeType: "S" },
+          ],
+          KeySchema: [
+            { AttributeName: "code", KeyType: "HASH" },
+            { AttributeName: "clicked_at", KeyType: "RANGE" },
+          ],
+          BillingMode: "PAY_PER_REQUEST",
+        })
+      );
+      await waitForTable(CLICK_EVENTS_TABLE);
+    }
+  });
 }
