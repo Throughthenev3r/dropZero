@@ -39,11 +39,11 @@ async function tableExists(tableName) {
 }
 
 async function waitForTable(tableName) {
-  for (let attempt = 0; attempt < 10; attempt += 1) {
+  for (let attempt = 0; attempt < 30; attempt += 1) {
     if (await tableExists(tableName)) {
       return;
     }
-    await new Promise((resolve) => setTimeout(resolve, 200));
+    await new Promise((resolve) => setTimeout(resolve, 500));
   }
   throw new Error(`Table ${tableName} was not ready in time`);
 }

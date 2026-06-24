@@ -10,7 +10,7 @@
     "db:up": "docker compose up -d",
     "db:down": "docker compose down",
     "package:lambda": "node scripts/package-lambda.mjs",
-    "test:unit": "node --test tests/*.test.js",
+    "test:unit": "node --test --test-concurrency=1 tests/*.test.js",
     "test:e2e": "npx playwright test e2e/shortener.spec.js --project=chromium",
     "test:smoke": "npx playwright test e2e/shortener.spec.js --project=chromium",
     "test": "npm run test:unit && npm run test:e2e",

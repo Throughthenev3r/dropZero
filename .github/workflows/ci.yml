@@ -35,6 +35,18 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Wait for DynamoDB Local
+        run: |
+          for i in $(seq 1 30); do
+            if curl -fsS http://localhost:8000 >/dev/null 2>&1; then
+              echo "DynamoDB Local is ready"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "DynamoDB Local did not become ready in time"
+          exit 1
+
       - name: Lint
         run: npm run lint
 
