@@ -1,7 +1,7 @@
 import { save, hasCode } from "./linkStore.js";
 import { generateCode } from "../utils/generateCode.js";
 
-export function shortenUrl(url) {
+export async function shortenUrl(url) {
   function isValidUrl(url) {
     if (!url || typeof url !== "string") return false;
     try {
@@ -19,9 +19,9 @@ export function shortenUrl(url) {
   let code;
   do {
     code = generateCode();
-  } while (hasCode(code));
+  } while (await hasCode(code));
 
-  save(code, url);
+  await save(code, url);
 
   const baseUrl = process.env.BASE_URL || "http://localhost:3000";
   return {

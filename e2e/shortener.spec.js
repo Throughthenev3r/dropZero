@@ -1,5 +1,11 @@
 import { test, expect } from "@playwright/test";
 
+test("health returns ok", async ({ request }) => {
+  const response = await request.get("/health");
+  expect(response.status()).toBe(200);
+  expect(await response.json()).toEqual({ ok: true });
+});
+
 test("shorten url and redirect to original", async ({ page, request }) => {
   const response = await request.post("/api/shorten", {
     data: { url: "https://google.com" },

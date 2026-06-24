@@ -1,7 +1,19 @@
 node_modules/
+
+# Secrets — never commit
 .env
+.env.local
+.env.*.local
+
 *.log
 links.db
+.lambda-package/
+
+# Terraform
+infra/lambda.zip
+infra/.terraform/
+infra/*.tfstate
+infra/*.tfstate.*
 
 # Playwright
 /test-results/
